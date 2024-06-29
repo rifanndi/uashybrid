@@ -1,53 +1,69 @@
-import { Redirect, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
-import Home from './pages/Home';
+// App.jsx
+import React, { useState } from "react";
+import axios from "axios";
+import config from "./config";
+import NavBar from "./NavBar"; // Import the NavBar component
+import DetailArticle from "./DetailArticle";
 
-/* Core CSS required for Ionic components to work properly */
-import '@ionic/react/css/core.css';
+function App() {
+  const [query, setQuery] = useState("");
+  const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
-/* Basic CSS for apps built with Ionic */
-import '@ionic/react/css/normalize.css';
-import '@ionic/react/css/structure.css';
-import '@ionic/react/css/typography.css';
+  const searchArticles = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${query}&api-key=${config.NYTimesAPIKey}`
+      );
+      setArticles(response.data.response.docs);
+      setSelectedArticle(null);
+    } catch (error) {
+      console.error("Error fetching articles:", error);
+    }
+  };
 
-/* Optional CSS utils that can be commented out */
-import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
-import '@ionic/react/css/flex-utils.css';
-import '@ionic/react/css/display.css';
+  const handleArticleClick = (article) => {
+    setSelectedArticle(article);
+  };
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
-import '@ionic/react/css/palettes/dark.system.css';
-
-/* Theme variables */
-import './theme/variables.css';
-
-setupIonicReact();
-
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route exact path="/home">
-          <Home />
-        </Route>
-        <Route exact path="/">
-          <Redirect to="/home" />
-        </Route>
-      </IonRouterOutlet>
-    </IonReactRouter>
-  </IonApp>
-);
+  return (
+    <div>
+      <NavBar
+        query={query}
+        setQuery={setQuery}
+        searchArticles={searchArticles}
+      />
+      <div style={{ margin: "3%" }}>
+        {/* Menampilkan artikel */}
+        {articles.map((article) => (
+          <div
+            key={article._id}
+            className="mb-4 p-4 border rounded"
+            style={{ borderRadius: "10px", border: "solid", margin: "10px" }}
+          >
+            <h2 style={{ marginLeft: "1.5%" }}>{article.headline.main}</h2>
+            <p style={{ marginLeft: "1.5%" }}>
+              <strong>Penulis:</strong> {article.byline.original} |{" "}
+              <strong>Tanggal Rilis:</strong> {article.pub_date}
+            </p>
+            <p style={{ marginLeft: "1.5%" }}>{article.snippet}</p>{" "}
+            <a
+              href={article.web_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 bg-blue-500 text-white hover:bg-blue-600 transition-all rounded"
+            >
+              Read Full Article
+            </a>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: "center", marginBottom: "10%" }}>
+        {/* Menampilkan artikel yang dipilih */}
+        {selectedArticle && <DetailArticle article={selectedArticle} />}
+      </div>
+    </div>
+  );
+}
 
 export default App;
